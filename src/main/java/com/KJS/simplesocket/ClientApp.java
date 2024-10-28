@@ -8,7 +8,9 @@ import java.net.Socket;
 
 public class ClientApp {
     private final static int port = 33333;
+//    private final static String serverIp = "127.0.0.1";
     private final static String serverIp = "192.168.0.6";
+
 
     public static void main(String[] args) {
         // 클라이언트 소켓을 만든다. (IP주소, 포트번호) (clientSocket)
