@@ -8,6 +8,10 @@ public class ClientApp {
 //    private final static String serverIp = "127.0.0.1";
     private final static String serverIp = "192.168.0.6";
 
+    private Socket clientSocket = null;
+    private BufferedWriter socketWriter = null;
+    private BufferedReader socketReader = null;
+    private BufferedReader keyboardReader = null;
 
     public static void main(String[] args) {
         // 클라이언트 소켓을 만든다. (IP주소, 포트번호) (clientSocket)
@@ -15,39 +19,47 @@ public class ClientApp {
         // 서버와 연결된 클라이언트 소켓으로 읽거나 쓴다.
         // 읽을때는 동기상태 (블로킹)
 
-        Socket clientSocket = null;
-        BufferedWriter socketWriter = null;
-        BufferedReader socketReader = null;
-        BufferedReader keyboardReader = null;
+        ClientApp ca = new ClientApp();
+        ca.doNetworking();
+    }
 
+    public void init() throws IOException {
+        this.clientSocket = new Socket(serverIp, port);
+        System.out.println("클라이언트 소켓 생성후 서버에 접속 성공");
+
+        socketWriter = new BufferedWriter(
+                new OutputStreamWriter(clientSocket.getOutputStream())
+        );
+        socketReader = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream())
+        );
+        keyboardReader = new BufferedReader(
+                new InputStreamReader(System.in)
+        );
+        socketWriter.write(String.format("클라이언트[%s] 에서 문자열 전송 함", serverIp));
+        socketWriter.newLine();
+        socketWriter.flush();
+    }
+
+    public void doNetworking() {
 
         try {
-            clientSocket = init();
-            socketWriter = new BufferedWriter(
-                    new OutputStreamWriter(clientSocket.getOutputStream())
-            );
-            socketReader = new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream())
-            );
-            keyboardReader = new BufferedReader(
-                    new InputStreamReader(System.in)
-            );
-            socketWriter.write(String.format("클라이언트[%s] 에서 문자열 전송 함", serverIp));
-            socketWriter.newLine();
-            socketWriter.flush();
+            this.init();
+
+            Thread rsst = new Thread(new ReadServerSocketThread());
+            rsst.start();
 
             while (true) {
-                String readMsg = socketReader.readLine(); // 블로킹 상태
-                System.out.printf("서버 에서 받은 문자열 : %s%n", readMsg);
-                if( "exit".equalsIgnoreCase(readMsg) ) {
-                    break;
-                }
-
+//                String readMsg = socketReader.readLine(); // 블로킹 상태
+//                System.out.printf("서버 에서 받은 문자열 : %s%n", readMsg);
+//                if( "exit".equalsIgnoreCase(readMsg) ) {
+//                    break;
+//                }
                 System.out.print("클라이언트에서 문자열 입력 : ");
-                String keyboardMsg = keyboardReader.readLine(); // 블로킹 상태
-                socketWriter.write(keyboardMsg);
-                socketWriter.newLine();
-                socketWriter.flush();
+                String keyboardMsg = this.keyboardReader.readLine(); // 블로킹 상태
+                this.socketWriter.write(keyboardMsg);
+                this.socketWriter.newLine();
+                this.socketWriter.flush();
                 if( "exit".equalsIgnoreCase(keyboardMsg) ) {
                     break;
                 }
@@ -61,28 +73,45 @@ public class ClientApp {
             System.out.println("Exception");
             System.out.println(ex.toString());
         } finally {
-            try {
-                if (keyboardReader != null) {
-                    keyboardReader.close();
-                }
-                if (socketReader != null) {
-                    socketReader.close();
-                }
-                if (socketWriter != null) {
-                    socketWriter.close();
-                }
-                if (clientSocket != null) {
-                    clientSocket.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            closeAll();
             System.out.println("클라이언트 프로그램 종료");
         }
     }
-    public static Socket init() throws IOException {
-        Socket socket = new Socket(serverIp, port);
-        System.out.println("클라이언트 소켓 생성후 서버에 접속 성공");
-        return socket;
+    public void closeAll() {
+        try {
+            if (keyboardReader != null) {
+                keyboardReader.close();
+            }
+            if (socketReader != null) {
+                socketReader.close();
+            }
+            if (socketWriter != null) {
+                socketWriter.close();
+            }
+            if (clientSocket != null) {
+                clientSocket.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+        }
+    }
+
+    class ReadServerSocketThread implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    String readMsg = socketReader.readLine();
+                    System.out.printf("서버 에서 받은 문자열 : %s%n", readMsg);
+                    if ("exit".equalsIgnoreCase(readMsg)) {
+                        System.exit(-1);
+                    }
+                } catch (IOException ex) {
+                    closeAll();
+                    break;
+                }
+            }
+        }
     }
 }

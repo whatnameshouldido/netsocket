@@ -9,7 +9,11 @@ public class ServerApp {
     // 0~9999 까지는 대부분 프로그램이 사용한다.
     // 그래서 1만번이상 하는게 좋다. 10000 ~ 65534
 
-    private static ServerSocket serverSocket = null;
+    public ServerSocket serverSocket = null;
+    public Socket acceptSocket = null;
+    public BufferedWriter socketWriter = null;
+    public BufferedReader socketReader = null;
+    public BufferedReader keyboardReader = null;
 
     public static void main(String[] args) {
         // 서버 소켓을 만든다. (serverSocket)
@@ -18,39 +22,45 @@ public class ServerApp {
         // 클라이언트 로부터 접속이 되면 클라이언트와 연결할 소켓을 리턴하다. (acceptSocket)
         // 클라이언트와 연결된 소켓으로 읽거나 쓴다. 읽을때는 동기상태 (블로킹)
 
-        Socket acceptSocket = null;
-        BufferedWriter socketWriter = null;
-        BufferedReader socketReader = null;
-        BufferedReader keyboardReader = null;
+        ServerApp sa = new ServerApp();
+        sa.doNetworking();
+    }
+
+    public void init() throws IOException {
+        this.serverSocket = new ServerSocket(port);
+        System.out.println("서버소켓으로 클라이언트 접속 대기 중");
+        this.acceptSocket = serverSocket.accept(); // 블로킹 상태
+        System.out.println("클라이언트 연결 됨");
+
+        this.socketWriter = new BufferedWriter(
+                new OutputStreamWriter(this.acceptSocket.getOutputStream())
+        );
+        this.socketReader = new BufferedReader(
+                new InputStreamReader(this.acceptSocket.getInputStream())
+        );
+        this.keyboardReader = new BufferedReader(
+                new InputStreamReader(System.in)
+        );
+    }
+
+    public void doNetworking() {
 
         try {
-            acceptSocket = init();
-            socketWriter = new BufferedWriter(
-                    new OutputStreamWriter(acceptSocket.getOutputStream())
-            );
-            socketReader = new BufferedReader(
-                    new InputStreamReader(acceptSocket.getInputStream())
-            );
-            keyboardReader = new BufferedReader(
-                    new InputStreamReader(System.in)
-            );
-            while(true) {
-                String readMsg = socketReader.readLine(); // 블로킹 상태
-                System.out.printf("서버가 받은 메시지 : %s%n", readMsg);
-                if( "exit".equalsIgnoreCase(readMsg) ) {
-                    break;
-                }
+            this.init();
 
+            ReadClientSocketThread rcst = new ReadClientSocketThread();
+            rcst.start();
+
+            while(true) {
                 System.out.print("서버에서 문자열 입력 : ");
-                String keyboardMsg = keyboardReader.readLine(); // 블로킹 상태
-                socketWriter.write(keyboardMsg);
-                socketWriter.newLine();
-                socketWriter.flush();
+                String keyboardMsg = this.keyboardReader.readLine(); // 블로킹 상태
+                this.socketWriter.write(keyboardMsg);
+                this.socketWriter.newLine();
+                this.socketWriter.flush();
                 if( "exit".equalsIgnoreCase(keyboardMsg) ) {
                     break;
                 }
             }
-
         } catch (IOException ioE) {
             System.out.println("IOException");
             System.out.println(ioE.toString());
@@ -58,34 +68,48 @@ public class ServerApp {
             System.out.println("Exception");
             System.out.println(ex.toString());
         } finally {
-            try {
-                if (keyboardReader != null) {
-                    keyboardReader.close();
-                }
-                if (socketReader != null) {
-                    socketReader.close();
-                }
-                if (socketWriter != null) {
-                    socketWriter.close();
-                }
-                if (acceptSocket != null) {
-                    acceptSocket.close();
-                }
-                if (serverSocket != null) {
-                    serverSocket.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            this.closeAll();
             System.out.println("서버 프로그램 종료");
         }
     }
 
-    public static Socket init() throws IOException {
-        serverSocket = new ServerSocket(port);
-        System.out.println("서버소켓으로 클라이언트 접속 대기 중");
-        Socket socket = serverSocket.accept(); // 블로킹 상태
-        System.out.println("클라이언트 연결 됨");
-        return socket;
+    public void closeAll() {
+        try {
+            if (this.keyboardReader != null) {
+                this.keyboardReader.close();
+            }
+            if (this.socketReader != null) {
+                this.socketReader.close();
+            }
+            if (this.socketWriter != null) {
+                this.socketWriter.close();
+            }
+            if (this.acceptSocket != null) {
+                this.acceptSocket.close();
+            }
+            if (this.serverSocket != null) {
+                this.serverSocket.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    class ReadClientSocketThread extends Thread {
+        @Override
+        public void run() {
+            while(true) {
+                try {
+                    String readMsg = socketReader.readLine(); // 블로킹 상태
+                    System.out.printf("서버가 받은 메시지 : %s%n", readMsg);
+                    if( "exit".equalsIgnoreCase(readMsg) ) {
+                        System.exit(-1);
+                    }
+                } catch (Exception ex) {
+                    closeAll();
+                    break;
+                }
+            }
+        }
     }
 }
