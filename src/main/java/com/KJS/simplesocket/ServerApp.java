@@ -27,10 +27,10 @@ public class ServerApp {
     }
 
     public void init() throws IOException {
-        this.serverSocket = new ServerSocket(port);
+//        this.serverSocket = new ServerSocket(port);
         System.out.println("서버소켓으로 클라이언트 접속 대기 중");
         this.acceptSocket = serverSocket.accept(); // 블로킹 상태
-        System.out.println("클라이언트 연결 됨");
+        System.out.printf("클라이언트[%s] 연결 됨%n", this.acceptSocket.getInetAddress());
 
         this.socketWriter = new BufferedWriter(
                 new OutputStreamWriter(this.acceptSocket.getOutputStream())
@@ -44,8 +44,8 @@ public class ServerApp {
     }
 
     public void doNetworking() {
-
         try {
+            this.serverSocket = new ServerSocket(port);
             this.init();
 
             ReadClientSocketThread rcst = new ReadClientSocketThread();
@@ -102,8 +102,18 @@ public class ServerApp {
                 try {
                     String readMsg = socketReader.readLine(); // 블로킹 상태
                     System.out.printf("서버가 받은 메시지 : %s%n", readMsg);
-                    if( "exit".equalsIgnoreCase(readMsg) ) {
-                        System.exit(-1);
+                    if( readMsg == null || "exit".equalsIgnoreCase(readMsg) ) {
+                        System.out.println("클라이언트 접속 해제");
+                        if (socketReader != null) {
+                            socketReader.close();
+                        }
+                        if (socketWriter != null) {
+                            socketWriter.close();
+                        }
+                        if (acceptSocket != null) {
+                            acceptSocket.close();
+                        }
+                        init();
                     }
                 } catch (Exception ex) {
                     closeAll();

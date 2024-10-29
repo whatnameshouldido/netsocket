@@ -1,12 +1,15 @@
 package com.KJS.simplesocket;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class ClientApp {
     private final static int port = 33333;
-//    private final static String serverIp = "127.0.0.1";
-    private final static String serverIp = "192.168.0.6";
+//    private final static String serverIp = "127.0.0.1";  //개인 연습용 IP
+//    private final static String serverIp = "192.168.0.6";  //민준이 서버 IP
+    private final static String serverIp = "192.168.0.10";  //강사님 서버 IP
 
     private Socket clientSocket = null;
     private BufferedWriter socketWriter = null;
@@ -36,13 +39,30 @@ public class ClientApp {
         keyboardReader = new BufferedReader(
                 new InputStreamReader(System.in)
         );
-        socketWriter.write(String.format("클라이언트[%s] 에서 문자열 전송 함", serverIp));
+        socketWriter.write(String.format("클라이언트[%s] 에서 첫 문자열 전송 함", getMyIp()));
         socketWriter.newLine();
         socketWriter.flush();
     }
+    
+    private String getMyIp() {
+        InetAddress local = null;
+        try {
+            local = InetAddress.getLocalHost();
+        }
+        catch ( UnknownHostException e ) {
+            e.printStackTrace();
+        }
+        if( local == null ) {
+            return "0.0.0.0";
+        }
+        else {
+            String ip = local.getHostAddress();
+            return ip;
+        }
+
+    }
 
     public void doNetworking() {
-
         try {
             this.init();
 
@@ -65,7 +85,6 @@ public class ClientApp {
                 }
             }
 
-
         } catch (IOException ioE) {
             System.out.println("IOException");
             System.out.println(ioE.toString());
@@ -77,6 +96,7 @@ public class ClientApp {
             System.out.println("클라이언트 프로그램 종료");
         }
     }
+
     public void closeAll() {
         try {
             if (keyboardReader != null) {
@@ -100,7 +120,7 @@ public class ClientApp {
     class ReadServerSocketThread implements Runnable {
         @Override
         public void run() {
-            while (true) {
+            while(true) {
                 try {
                     String readMsg = socketReader.readLine();
                     System.out.printf("서버 에서 받은 문자열 : %s%n", readMsg);
