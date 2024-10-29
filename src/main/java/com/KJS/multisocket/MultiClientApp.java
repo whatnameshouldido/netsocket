@@ -7,8 +7,8 @@ import java.net.UnknownHostException;
 
 public class MultiClientApp {
     private final static int port = 33334;
-    //    private final static String serverIp = "127.0.0.1";
-    private final static String serverIp = "192.168.0.10";
+        private final static String serverIp = "127.0.0.1";
+//    private final static String serverIp = "192.168.0.10";
 
     private Socket clientSocket = null;
     private BufferedWriter socketWriter = null;
