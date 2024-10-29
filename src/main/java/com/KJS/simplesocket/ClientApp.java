@@ -8,8 +8,8 @@ import java.net.UnknownHostException;
 public class ClientApp {
     private final static int port = 33333;
 //    private final static String serverIp = "127.0.0.1";  //개인 연습용 IP
-//    private final static String serverIp = "192.168.0.6";  //민준이 서버 IP
-    private final static String serverIp = "192.168.0.10";  //강사님 서버 IP
+    private final static String serverIp = "192.168.0.6";  //민준이 서버 IP
+//    private final static String serverIp = "192.168.0.10";  //강사님 서버 IP
 
     private Socket clientSocket = null;
     private BufferedWriter socketWriter = null;
@@ -122,7 +122,7 @@ public class ClientApp {
         public void run() {
             while(true) {
                 try {
-                    String readMsg = socketReader.readLine();
+                    String readMsg = socketReader.readLine(); //블로킹 상태
                     System.out.printf("서버 에서 받은 문자열 : %s%n", readMsg);
                     if ("exit".equalsIgnoreCase(readMsg)) {
                         System.exit(-1);

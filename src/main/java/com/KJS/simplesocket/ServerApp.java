@@ -17,8 +17,7 @@ public class ServerApp {
 
     public static void main(String[] args) {
         // 서버 소켓을 만든다. (serverSocket)
-        // 포트를 지정하고 bind, listen 으로 클라이언트 접속 할때까지 대기한다. (
-        // 블로킹 상태) 동기상태
+        // 포트를 지정하고 bind, listen 으로 클라이언트 접속 할때까지 대기한다. (블로킹 상태) 동기상태
         // 클라이언트 로부터 접속이 되면 클라이언트와 연결할 소켓을 리턴하다. (acceptSocket)
         // 클라이언트와 연결된 소켓으로 읽거나 쓴다. 읽을때는 동기상태 (블로킹)
 
@@ -72,7 +71,6 @@ public class ServerApp {
             System.out.println("서버 프로그램 종료");
         }
     }
-
     public void closeAll() {
         try {
             if (this.keyboardReader != null) {
