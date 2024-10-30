@@ -6,9 +6,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class ClientApp {
-    private final static int port = 33333;
-//    private final static String serverIp = "127.0.0.1";  //개인 연습용 IP
-    private final static String serverIp = "192.168.0.6";  //민준이 서버 IP
+//    private final static int port = 33333;
+//    private final static String serverIp = "127.0.0.1";
+//    private final static String serverIp = "192.168.0.6";  //민준이 서버 IP
 //    private final static String serverIp = "192.168.0.10";  //강사님 서버 IP
 
     private Socket clientSocket = null;
@@ -22,11 +22,23 @@ public class ClientApp {
         // 서버와 연결된 클라이언트 소켓으로 읽거나 쓴다.
         // 읽을때는 동기상태 (블로킹)
 
-        ClientApp ca = new ClientApp();
-        ca.doNetworking();
+        try {
+            if (args.length != 2) {
+                System.out.println("에러 : IP주소와 포트(숫자) 를 입력 하세요 (예 : java -cp . com.softagape.simplesocket.ServerApp IP주소 포트번호)");
+            } else {
+                String serverIp = args[0];
+                Integer port = Integer.parseInt(args[1]);
+                ClientApp ca = new ClientApp();
+                ca.doNetworking(serverIp, port);
+            }
+        } catch (NumberFormatException ex) {
+            System.out.println("에러 : IP주소와 포트(숫자) 를 입력 하세요 (예 : java -cp . com.softagape.simplesocket.ServerApp IP주소 포트번호)");
+        } catch (Exception ex) {
+            System.out.println(ex.toString());
+        }
     }
 
-    public void init() throws IOException {
+    public void init(String serverIp, Integer port) throws IOException {
         this.clientSocket = new Socket(serverIp, port);
         System.out.println("클라이언트 소켓 생성후 서버에 접속 성공");
 
@@ -62,9 +74,9 @@ public class ClientApp {
 
     }
 
-    public void doNetworking() {
+    public void doNetworking(String serverIp, Integer port) {
         try {
-            this.init();
+            this.init(serverIp, port);
 
             Thread rsst = new Thread(new ReadServerSocketThread());
             rsst.start();
@@ -122,7 +134,7 @@ public class ClientApp {
         public void run() {
             while(true) {
                 try {
-                    String readMsg = socketReader.readLine(); //블로킹 상태
+                    String readMsg = socketReader.readLine(); // 블로킹 상태
                     System.out.printf("서버 에서 받은 문자열 : %s%n", readMsg);
                     if ("exit".equalsIgnoreCase(readMsg)) {
                         System.exit(-1);
@@ -135,3 +147,6 @@ public class ClientApp {
         }
     }
 }
+
+// javac -d . ClientApp.java
+// java -cp . com.softagape.simplesocket.ClientApp

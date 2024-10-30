@@ -4,10 +4,11 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 public class MultiClientApp {
-    private final static int port = 33334;
-        private final static String serverIp = "127.0.0.1";
+//    private final static int port = 34567;
+//        private final static String serverIp = "127.0.0.1";
 //    private final static String serverIp = "192.168.0.10";
 
     private Socket clientSocket = null;
@@ -21,19 +22,32 @@ public class MultiClientApp {
         // 서버와 연결된 클라이언트 소켓으로 읽거나 쓴다.
         // 읽을때는 동기상태 (블로킹)
 
-        MultiClientApp ca = new MultiClientApp();
-        ca.doNetworking();
+
+        try {
+            if (args.length != 2) {
+                System.out.println("에러 : IP주소와 포트(숫자) 를 입력 하세요 (예 : java -cp . com.softagape.simplesocket.ServerApp IP주소 포트번호)");
+            } else {
+                String serverIp = args[0];
+                Integer port = Integer.parseInt(args[1]);
+                MultiClientApp ca = new MultiClientApp();
+                ca.doNetworking(serverIp, port);
+            }
+        } catch (NumberFormatException ex) {
+            System.out.println("에러 : IP주소와 포트(숫자) 를 입력 하세요 (예 : java -cp . com.softagape.simplesocket.ServerApp IP주소 포트번호)");
+        } catch (Exception ex) {
+            System.out.println(ex.toString());
+        }
     }
 
-    public void init() throws IOException {
+    public void init(String serverIp, Integer port) throws IOException {
         this.clientSocket = new Socket(serverIp, port);
         System.out.println("클라이언트 소켓 생성후 서버에 접속 성공");
 
         socketWriter = new BufferedWriter(
-                new OutputStreamWriter(clientSocket.getOutputStream())
+                new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8)
         );
         socketReader = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream())
+                new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)
         );
         keyboardReader = new BufferedReader(
                 new InputStreamReader(System.in)
@@ -61,9 +75,9 @@ public class MultiClientApp {
 
     }
 
-    public void doNetworking() {
+    public void doNetworking(String serverIp, Integer port) {
         try {
-            this.init();
+            this.init(serverIp, port);
 
             Thread rsst = new Thread(new ReadServerSocketThread());
             rsst.start();
@@ -131,3 +145,6 @@ public class MultiClientApp {
         }
     }
 }
+
+// javac -d . MultiClientApp.java
+// java -cp . com.softagape.multisocket.MultiClientApp
